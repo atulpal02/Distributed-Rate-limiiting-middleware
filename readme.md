@@ -1,12 +1,12 @@
-Distributed Rate Limiting Middleware
+#Distributed Rate Limiting Middleware#
 
-A high-performance distributed rate limiting middleware built with Node.js and Redis to protect APIs from abuse and ensure fair usage across different user tiers.
+A distributed rate limiting middleware built using Node.js, Redis, and Docker to protect APIs from abuse and enforce fair usage across user tiers.
 
-This middleware uses the Token Bucket algorithm and Redis to enforce rate limits consistently across multiple servers in a distributed environment.
+The system uses the Token Bucket algorithm with Redis as a centralized store, enabling consistent rate limits across multiple servers behind a load balancer.
 
 Features
 
-Tier-based rate limiting (Basic, Pro, etc.)
+Tier-based rate limiting (Basic, Pro users)
 
 Distributed request tracking using Redis
 
@@ -14,9 +14,9 @@ Token Bucket algorithm for burst handling
 
 Stateless middleware supporting horizontal scaling
 
-Low-latency request validation with O(1) Redis operations
+Dockerized setup for easy deployment
 
-Suitable for multi-server deployments behind load balancers
+Low-latency request validation
 
 Architecture
 Client
@@ -25,35 +25,31 @@ Client
 Load Balancer
    │
    ▼
-Node.js API Servers (Multiple Instances)
+Node.js API Servers (Docker Containers)
    │
    ▼
 Redis (Shared Token Store)
 
-Redis acts as the centralized store for tokens, ensuring that rate limits remain consistent across all application instances.
+Redis acts as a centralized store, ensuring all server instances share the same rate limiting state.
 
 Rate Limiting Strategy
 
-This project uses the Token Bucket Algorithm.
-
-Each user is assigned a bucket containing a number of tokens:
+This project implements the Token Bucket Algorithm.
 
 Example tiers:
 
 Tier	Limit
-Basic	10 requests per minute
-Pro	100 requests per minute
-How it works
+Basic	10 requests/min
+Pro	100 requests/min
+Workflow
 
-Each request attempts to consume a token.
+Each request consumes a token.
 
-If tokens are available → request is allowed.
+If tokens are available → request allowed.
 
-If no tokens remain → request is rejected.
+If no tokens remain → request rejected.
 
-Tokens refill over time based on the configured rate.
-
-This allows short bursts of traffic while still enforcing long-term limits.
+Tokens refill periodically based on configuration.
 
 Tech Stack
 
@@ -63,47 +59,61 @@ Express.js
 
 Redis
 
-Docker (optional)
+Docker
 
-Nginx / Load Balancer (for multi-server deployment)
+Nginx / Load Balancer
 
-Installation
+Project Structure
+project
+│
+├── middleware
+│   └── rateLimiter.js
+│
+├── config
+│   └── redisClient.js
+│
+├── routes
+│   └── apiRoutes.js
+│
+├── Dockerfile
+├── docker-compose.yml
+├── app.js
+└── package.json
+Running with Docker
 
-Clone the repository:
+Build and run the services:
 
-git clone https://github.com/yourusername/distributed-rate-limiter.git
-cd distributed-rate-limiter
+docker-compose up --build
 
-Install dependencies:
+This starts:
 
-npm install
+Node.js API server
 
-Start Redis:
+Redis container
 
-redis-server
+Example docker-compose.yml
+version: "3"
 
-Run the application:
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    depends_on:
+      - redis
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
 
-npm start
-Environment Variables
-
-Create a .env file:
-
-REDIS_HOST=localhost
-REDIS_PORT=6379
-PORT=3000
-Usage
-
-Import the middleware in your Express application.
-
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+API Usage
 const rateLimiter = require("./middleware/rateLimiter");
 
-app.use("/api", rateLimiter("basic"));
-
-Example with tier configuration:
-
-app.use("/basic-api", rateLimiter("basic"));
-app.use("/pro-api", rateLimiter("pro"));
+app.use("/api/basic", rateLimiter("basic"));
+app.use("/api/pro", rateLimiter("pro"));
 Example Response (Rate Limit Exceeded)
 {
   "error": "Rate limit exceeded. Please try again later."
@@ -112,49 +122,15 @@ Example Response (Rate Limit Exceeded)
 HTTP Status Code:
 
 429 Too Many Requests
-Project Structure
-project
-│
-├── middleware
-│   └── rateLimiter.js
-│
-├── config
-│   └── redis.js
-│
-├── routes
-│   └── apiRoutes.js
-│
-├── app.js
-└── package.json
 Future Improvements
 
-IP-based rate limiting
-
-API key support
-
-Rate limit analytics
+API key based rate limiting
 
 Redis cluster support
 
-Monitoring with Prometheus/Grafana
+Monitoring dashboard
 
-Why Redis?
-
-Redis is used because it provides:
-
-Fast in-memory operations
-
-Atomic commands
-
-Low latency
-
-Shared state across multiple servers
-
-This makes it ideal for distributed rate limiting systems.
-
-License
-
-MIT License
+Rate limit analytics
 
 Author
 
@@ -163,6 +139,3 @@ Atul Pal
 GitHub: https://github.com/atulpal02
 
 LinkedIn: https://linkedin.com/in/atulpal02
-
-<img width="778" height="298" alt="Screenshot 2026-01-18 at 7 21 35 PM" src="https://github.com/user-attachments/assets/3d98ca39-3284-44fa-a359-d74b440ce097" />
-<img width="778" height="672" alt="Screenshot 2026-01-18 at 7 24 24 PM" src="https://github.com/user-attachments/assets/b404425b-f014-4dbe-8540-634ff5d272d5" />
