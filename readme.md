@@ -1,57 +1,44 @@
-#Distributed Rate Limiting Middleware#
+# Distributed Rate Limiting Middleware
 
 A distributed rate limiting middleware built using Node.js, Redis, and Docker to protect APIs from abuse and enforce fair usage across user tiers.
 
 The system uses the Token Bucket algorithm with Redis as a centralized store, enabling consistent rate limits across multiple servers behind a load balancer.
 
-Features
+## Features
 
 Tier-based rate limiting (Basic, Pro users)
 
 Distributed request tracking using Redis
 
-Token Bucket algorithm for burst handling
+Token Bucket algorithm for burst traffic handling
 
 Stateless middleware supporting horizontal scaling
 
 Dockerized setup for easy deployment
 
-Low-latency request validation
+Low-latency request validation using Redis
 
-Architecture
-Client
-   │
-   ▼
-Load Balancer
-   │
-   ▼
-Node.js API Servers (Docker Containers)
-   │
-   ▼
-Redis (Shared Token Store)
+## Rate Limiting Strategy
 
-Redis acts as a centralized store, ensuring all server instances share the same rate limiting state.
-
-Rate Limiting Strategy
-
-This project implements the Token Bucket Algorithm.
-
-Example tiers:
+###This project implements the Token Bucket Algorithm.
 
 Tier	Limit
 Basic	10 requests/min
 Pro	100 requests/min
-Workflow
 
-Each request consumes a token.
+###Workflow
+
+Each incoming request consumes a token.
 
 If tokens are available → request allowed.
 
-If no tokens remain → request rejected.
+If the bucket is empty → request rejected.
 
-Tokens refill periodically based on configuration.
+Tokens refill over time based on the configured rate.
 
-Tech Stack
+This allows short bursts of traffic while enforcing long-term limits
+
+## Tech Stack
 
 Node.js
 
@@ -63,33 +50,21 @@ Docker
 
 Nginx / Load Balancer
 
-Project Structure
-project
-│
-├── middleware
-│   └── rateLimiter.js
-│
-├── config
-│   └── redisClient.js
-│
-├── routes
-│   └── apiRoutes.js
-│
-├── Dockerfile
-├── docker-compose.yml
-├── app.js
-└── package.json
-Running with Docker
+## Running with Docker
 
-Build and run the services:
+### Start the services using Docker Compose:
+```
 
 docker-compose up --build
 
-This starts:
+```
+
+This will start:
 
 Node.js API server
 
 Redis container
+```
 
 Example docker-compose.yml
 version: "3"
@@ -109,7 +84,11 @@ services:
     image: redis:7
     ports:
       - "6379:6379"
-API Usage
+
+```
+## API Usage
+
+```
 const rateLimiter = require("./middleware/rateLimiter");
 
 app.use("/api/basic", rateLimiter("basic"));
@@ -119,20 +98,22 @@ Example Response (Rate Limit Exceeded)
   "error": "Rate limit exceeded. Please try again later."
 }
 
-HTTP Status Code:
-
+```
+## HTTP status code:
+```
 429 Too Many Requests
-Future Improvements
+```
+## Future Improvements
 
-API key based rate limiting
+API key-based rate limiting
 
 Redis cluster support
 
-Monitoring dashboard
+Rate limit analytics dashboard
 
-Rate limit analytics
+Monitoring with Prometheus/Grafana
 
-Author
+## Author
 
 Atul Pal
 
